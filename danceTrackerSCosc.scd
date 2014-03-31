@@ -114,10 +114,11 @@ t = Task({
 	t_path = PathName.new(msg[2].asString);
 	isMulti = t_path.isFolder;
 
+
 	if(~fileBuffers.at(msg[1]).value != nil,
 
 		{
-			if(~zoneDict.at(msg[1]).at(\isMultiFile) == false, {
+			if(~fileBuffers.at(msg[1]).value.isArray == false, {
 				//for single files
 				~fileBuffers.at(msg[1]).value.free;
 				},{
@@ -137,27 +138,21 @@ t = Task({
 
 	if(isMulti,
 		{
-			var fileArray = Array.newClear();
-			//for multi files
-			"multi".postln;
-			~zoneDict.at(msg[1])[\isMultiFile] = true;
+			//for multiple files
+			var fileNames = Array.newClear(), t_sounds = Array.newClear();
 
+			//fill an
+			t_path.filesDo{|aFile|fileNames = fileNames.add(aFile.fullPath.asString)};
 
-			t_path.filesDo{|aFile|
+			fileNames.asSortedList.do({|item|
+				t_sounds = t_sounds.add(Buffer.read(s, item));
+			});
 
-				//fill an array of all the files in the directory
-				aFile.realPath.postln;
-
-			};
-
-			~fileBuffers.put(msg[1], fileArray);
-
-
+			~fileBuffers.put(msg[1], t_sounds);
 
 		},
 		{
 			//for single files
-			~zoneDict.at(msg[1])[\isMultiFile] = false;
 			~fileBuffers.put(msg[1] , Buffer.read(s, msg[2]));
 		},
 	);
@@ -171,6 +166,8 @@ t = Task({
 ~playZone = nil;
 ~playZone = OSCresponderNode(nil, '/playZone', {|i, r, msg|
 
+	var sel_sample;
+
 	msg.postln;
 
 	if(~liveSynths.at(msg[1]) != nil){
@@ -178,14 +175,24 @@ t = Task({
 		~liveSynths.removeAt(msg[1]);
 	};
 
-	//isMultiFile needs to be considered here
+	//choose the correct sample
+	if(~fileBuffers.at(msg[1]).value.isArray,{
+
+		//choose a random
+		sel_sample = ~fileBuffers.at(msg[1]).value.choose;
+
+	},{
+		sel_sample = ~fileBuffers.at(msg[1]).value;
+	});
+
+	//NB. a multisample selector could be created later for multiple sample gran synths
 
 	if(~zoneDict.at(msg[1]).at(\synthType) == 0,{
 
 			~liveSynths.put(msg[1],
 
 				Synth.new(\SimplePlayer,
-					[\buf, ~fileBuffers.at(msg[1]).value,
+					[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\loop, ~zoneDict.at(msg[1]).at(\loop),
 					\pan, ~zoneDict.at(msg[1]).at(\pan),
@@ -204,7 +211,7 @@ t = Task({
 			~liveSynths.put(msg[1],
 
 				Synth.new(\Gran1,
-					[\buf, ~fileBuffers.at(msg[1]).value,
+					[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\pan, ~zoneDict.at(msg[1]).at(\pan),
 					\amp, ~zoneDict.at(msg[1]).at(\amp),
@@ -226,7 +233,7 @@ t = Task({
 			~liveSynths.put(msg[1],
 
 				Synth.new(\Gran2,
-					[\buf, ~fileBuffers.at(msg[1]).value,
+					[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\width, ~zoneDict.at(msg[1]).at(\width),
 					\amp, ~zoneDict.at(msg[1]).at(\amp),
@@ -291,6 +298,21 @@ t = Task({
 		~sceneGroups[count].free;
 
 	};
+
+	~fileBuffers.do({|item|
+		if(item.isArray,
+			{
+				item.do({|buf|
+					buf.free;
+				});
+
+			},{
+				item.free;
+			}
+		)
+	});
+
+	~fileBuffers = nil;
 
 	//0.exit;
 
