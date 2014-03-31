@@ -178,8 +178,14 @@ t = Task({
 	//choose the correct sample
 	if(~fileBuffers.at(msg[1]).value.isArray,{
 
-		//choose a random
-		sel_sample = ~fileBuffers.at(msg[1]).value.choose;
+		var st = ~zoneDict.at(msg[1]).at(\selectorType).asString;
+
+		//this needs modifiying with a mutable index value
+
+		if( st == "random",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
+		if( st == "wrap",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
+		if( st == "serial",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
+		if( st == "pingpong",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
 
 	},{
 		sel_sample = ~fileBuffers.at(msg[1]).value;
@@ -187,7 +193,9 @@ t = Task({
 
 	//NB. a multisample selector could be created later for multiple sample gran synths
 
-	if(~zoneDict.at(msg[1]).at(\synthType) == 0,{
+
+
+	if(~zoneDict.at(msg[1]).at(\synthType).asString == "simple",{
 
 			~liveSynths.put(msg[1],
 
@@ -206,7 +214,7 @@ t = Task({
 
 	});
 
-	if(~zoneDict.at(msg[1]).at(\synthType) == 1,{
+	if(~zoneDict.at(msg[1]).at(\synthType).asString == "gran1",{
 
 			~liveSynths.put(msg[1],
 
@@ -228,7 +236,7 @@ t = Task({
 
 	});
 
-	if(~zoneDict.at(msg[1]).at(\synthType) == 2,{
+	if(~zoneDict.at(msg[1]).at(\synthType).asString == "gran2",{
 
 			~liveSynths.put(msg[1],
 
