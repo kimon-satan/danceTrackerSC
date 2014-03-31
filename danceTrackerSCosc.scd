@@ -111,9 +111,8 @@ t = Task({
 	var t_path, isMulti;
 
 	msg.postln;
-	t_path = msg[2].asString;
-
-	isMulti = t_path.contains(".").not;
+	t_path = PathName.new(msg[2].asString);
+	isMulti = t_path.isFolder;
 
 	if(~fileBuffers.at(msg[1]).value != nil,
 
@@ -138,12 +137,21 @@ t = Task({
 
 	if(isMulti,
 		{
+			var fileArray = Array.newClear();
 			//for multi files
 			"multi".postln;
 			~zoneDict.at(msg[1])[\isMultiFile] = true;
 
-			//fill an array of all the files in the directory
-			//add to file buffers ... check copied properly
+
+			t_path.filesDo{|aFile|
+
+				//fill an array of all the files in the directory
+				aFile.realPath.postln;
+
+			};
+
+			~fileBuffers.put(msg[1], fileArray);
+
 
 
 		},
