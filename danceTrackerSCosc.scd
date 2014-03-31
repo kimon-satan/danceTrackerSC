@@ -108,20 +108,52 @@ t = Task({
 ~loadZoneSound = nil;
 ~loadZoneSound = OSCresponderNode(nil, '/loadZoneSound', {|i,r,msg|
 
+	var t_path, isMulti;
+
 	msg.postln;
+	t_path = msg[2].asString;
+
+	isMulti = t_path.contains(".").not;
 
 	if(~fileBuffers.at(msg[1]).value != nil,
 
 		{
-			~fileBuffers.at(msg[1]).value.free;
-			~fileBuffers.removeAt(msg[1]);
+			if(~zoneDict.at(msg[1]).at(\isMultiFile) == false, {
+				//for single files
+				~fileBuffers.at(msg[1]).value.free;
+				},{
+					~fileBuffers.at(msg[1]).size().do{arg count;
+						~fileBuffers.at(msg[1]).at(count).value.free;
 
+					}
+				}
+			);
+
+			~fileBuffers.removeAt(msg[1]);
 		}
+
 
 	);
 
 
-	~fileBuffers.put(msg[1] , Buffer.read(s, msg[2]));
+	if(isMulti,
+		{
+			//for multi files
+			"multi".postln;
+			~zoneDict.at(msg[1])[\isMultiFile] = true;
+
+			//fill an array of all the files in the directory
+			//add to file buffers ... check copied properly
+
+
+		},
+		{
+			//for single files
+			~zoneDict.at(msg[1])[\isMultiFile] = false;
+			~fileBuffers.put(msg[1] , Buffer.read(s, msg[2]));
+		},
+	);
+
 
 
 }).add;
@@ -137,6 +169,8 @@ t = Task({
 		~liveSynths.at(msg[1]).set(\trig, 0);
 		~liveSynths.removeAt(msg[1]);
 	};
+
+	//isMultiFile needs to be considered here
 
 	if(~zoneDict.at(msg[1]).at(\synthType) == 0,{
 
