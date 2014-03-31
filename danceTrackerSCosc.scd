@@ -58,6 +58,7 @@ t = Task({
 	msg.postln;
 
 	zone = ();
+	zone.add(\sampleIndex->msg[3]);
 	~zoneDict.put(msg[1], zone);
 
 }).add;
@@ -101,6 +102,8 @@ t = Task({
 			~zoneDict.at(msg[1])[msg[2].asSymbol] = msg[3];
 		}
 	);
+
+
 
 }).add;
 
@@ -178,14 +181,19 @@ t = Task({
 	//choose the correct sample
 	if(~fileBuffers.at(msg[1]).value.isArray,{
 
-		var st = ~zoneDict.at(msg[1]).at(\selectorType).asString;
+		var st = ~zoneDict.at(msg[1]).at(\selectorType).asString,
+		si = ~zoneDict.at(msg[1]).at(\sampleIndex),
+		numFiles = ~fileBuffers.at(msg[1]).value.size();
 
 		//this needs modifiying with a mutable index value
 
-		if( st == "random",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
-		if( st == "wrap",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
-		if( st == "serial",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
-		if( st == "pingpong",{sel_sample = ~fileBuffers.at(msg[1]).value.choose});
+		if( st == "random",{si = rrand(0, numFiles -1)});
+		if( st == "wrap",{si = (si + 1)%numFiles; });
+		if( st == "serial",{si = min(si + 1, numFiles)});
+		if( st == "pingpong",{/* don't bother for the moment */ });
+
+		sel_sample = ~fileBuffers.at(msg[1]).value[si];
+		~zoneDict.at(msg[1])[\sampleIndex] = si;
 
 	},{
 		sel_sample = ~fileBuffers.at(msg[1]).value;
@@ -291,6 +299,16 @@ t = Task({
 	~sceneGroups[~sceneBusIndex].set(\loop, 0);
 	~sceneBusIndex = (~sceneBusIndex + 1)%10;
 	~sceneMaster = Synth.new(\SceneMix, [\inBus, ~sceneBuses[~sceneBusIndex], \att, msg[1], \dec, msg[2]], ~sceneGroups[~sceneBusIndex],'addToTail');
+
+}).add;
+
+
+~resetZones.remove;
+~resetZones = nil;
+~resetZones = OSCresponderNode(nil, '/resetZones', {|i, r, msg|
+
+
+	//reset persistent data here
 
 }).add;
 
