@@ -58,7 +58,8 @@ t = Task({
 	msg.postln;
 
 	zone = ();
-	zone.add(\sampleIndex->msg[3]);
+	zone.add(\sampleIndex->0);
+	zone.add(\isSampleAscend->true);
 	~zoneDict.put(msg[1], zone);
 
 }).add;
@@ -185,14 +186,30 @@ t = Task({
 		si = ~zoneDict.at(msg[1]).at(\sampleIndex),
 		numFiles = ~fileBuffers.at(msg[1]).value.size();
 
-		//this needs modifiying with a mutable index value
-
+		//only random is modified before
 		if( st == "random",{si = rrand(0, numFiles -1)});
-		if( st == "wrap",{si = (si + 1)%numFiles; });
-		if( st == "serial",{si = min(si + 1, numFiles)});
-		if( st == "pingpong",{/* don't bother for the moment */ });
 
 		sel_sample = ~fileBuffers.at(msg[1]).value[si];
+
+		if( st == "wrap",{si = (si + 1)%numFiles; });
+		if( st == "serial",{si = min(si + 1, numFiles - 1);});
+		if( st == "pingPong",{
+
+			if(~zoneDict.at(msg[1]).at(\isSampleAscend) == true,
+				{
+				//ascending
+					si = si + 1;
+					if(si == (numFiles - 1), {~zoneDict.at(msg[1])[\isSampleAscend] = false});
+				},{
+				//descending
+					si = si - 1;
+					if(si == 0, {~zoneDict.at(msg[1])[\isSampleAscend] = true});
+				}
+			);
+
+
+		});
+
 		~zoneDict.at(msg[1])[\sampleIndex] = si;
 
 	},{
@@ -303,12 +320,14 @@ t = Task({
 }).add;
 
 
-~resetZones.remove;
-~resetZones = nil;
-~resetZones = OSCresponderNode(nil, '/resetZones', {|i, r, msg|
+~resetZone.remove;
+~resetZone = nil;
+~resetZone = OSCresponderNode(nil, '/resetZone', {|i, r, msg|
 
-
+	//msg.postln;
 	//reset persistent data here
+	~zoneDict.at(msg[1])[\sampleIndex] = 0;
+	~zoneDict.at(msg[1])[\isSampleAscend] = true;
 
 }).add;
 
