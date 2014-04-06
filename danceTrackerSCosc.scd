@@ -362,7 +362,7 @@ t = Task({
 
 	~fileBuffers = nil;
 
-	//0.exit;
+	0.exit;
 
 
 }).add;
