@@ -15,7 +15,7 @@ SynthDef(\SimplePlayer, {
 	var sig;
 
 	sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * rate, 1,
-		startPos:BufFrames.kr(buf) * startPos, loop: loop, doneAction: 2);
+		startPos: BufFrames.kr(buf) * startPos, loop: loop, doneAction: 2);
 
 	sig = sig * EnvGen.kr(Env.asr(att,1,dec,'sine'), trig, doneAction: 2);
 	sig = Pan2.ar(MulAdd(sig, amp, 0),pan);

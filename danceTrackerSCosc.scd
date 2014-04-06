@@ -68,7 +68,7 @@ t = Task({
 ~removeZone = nil;
 ~removeZone = OSCresponderNode(nil, '/removeZone', {|i,r,msg|
 
-	msg.postln;
+	//msg.postln;
 	~zoneDict.removeAt(msg[1]);
 	//also will need to clear file buffers
 
@@ -78,6 +78,8 @@ t = Task({
 ~updateSynth.remove;
 ~updateSynth = nil;
 ~updateSynth = OSCresponderNode(nil, '/updateSynth', {|i ,r, msg|
+
+	//msg.postln;
 
 	~zoneDict.at(msg[1]).keysValuesDo{|key, value|
 
@@ -231,7 +233,8 @@ t = Task({
 					\pan, ~zoneDict.at(msg[1]).at(\pan),
 					\amp, ~zoneDict.at(msg[1]).at(\amp),
 					\att, ~zoneDict.at(msg[1]).at(\fadeIn),
-					\dec, ~zoneDict.at(msg[1]).at(\fadeOut)
+					\dec, ~zoneDict.at(msg[1]).at(\fadeOut),
+					\startPos, ~zoneDict.at(msg[1]).at(\startPos),
 					],~sceneGroups[~sceneBusIndex]
 				);
 
@@ -359,7 +362,7 @@ t = Task({
 
 	~fileBuffers = nil;
 
-	0.exit;
+	//0.exit;
 
 
 }).add;
