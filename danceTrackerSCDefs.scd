@@ -12,7 +12,7 @@ SynthDef(\SceneMix, {arg att = 0.01, dec = 0.01, inBus = 0, trig = 1;
 SynthDef(\Reverb, {arg att = 0.01, dec = 0.01, inBus = 0, outBus = 0, trig = 1;
 
 	var sig = In.ar(inBus, 2);
-	sig = GVerb.ar(sig + PinkNoise.ar(0.0001));
+	sig = GVerb.ar(sig + PinkNoise.ar(0.0001), roomsize: 16, revtime: 1.24, damping: 0.10, inputbw: 0.95, drylevel: -3.dbamp, earlyreflevel: -15.dbamp, taillevel: -17.dbamp, mul:0.3);
 	sig = sig * EnvGen.kr(Env.asr(att,1,dec,'sine'), trig, doneAction: 2);
 	Out.ar(outBus,sig);
 

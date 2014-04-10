@@ -243,7 +243,7 @@ t = Task({
 					\dec, ~zoneDict.at(msg[1]).at(\fadeOut),
 					\startPos, ~zoneDict.at(msg[1]).at(\startPos),
 					\revBus, ~revBuses[~sceneBusIndex],
-					\rev, 0.2
+					\rev, ~zoneDict.at(msg[1]).at(\rev)
 				],~sceneGroups[~sceneBusIndex]
 			);
 
@@ -388,7 +388,7 @@ t = Task({
 
 	~fileBuffers = nil;
 
-	//0.exit;
+	0.exit;
 
 
 }).add;
