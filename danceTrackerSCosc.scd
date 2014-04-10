@@ -12,11 +12,18 @@ b = NetAddr.new("127.0.0.1", 71717);    // create the NetAddr
 ~fileBuffers = Dictionary.new;
 ~liveSynths = Dictionary.new;
 ~sceneBuses = Array.fill(10, {Bus.audio(s,2)});
-	~sceneGroups = Array.fill(10, {Group.new});
-	~sceneBusIndex = 0;
-	~sceneMaster = Synth.new(\SceneMix, [\inBus, ~sceneBuses[~sceneBusIndex]],
-		~sceneGroups[~sceneBusIndex]
-	);
+~revBuses = Array.fill(10, {Bus.audio(s,2)});
+
+~sceneGroups = Array.fill(10, {Group.new});
+~sceneBusIndex = 0;
+
+~sceneMaster = Synth.new(\SceneMix, [\inBus, ~sceneBuses[~sceneBusIndex]],
+	~sceneGroups[~sceneBusIndex]
+);
+
+~revMaster = Synth.new(\Reverb, [\inBus, ~revBuses[~sceneBusIndex],
+	\outBus, ~sceneBuses[~sceneBusIndex]
+], ~sceneGroups[~sceneBusIndex]);
 
 
 t = Task({
@@ -199,11 +206,11 @@ t = Task({
 
 			if(~zoneDict.at(msg[1]).at(\isSampleAscend) == true,
 				{
-				//ascending
+					//ascending
 					si = si + 1;
 					if(si == (numFiles - 1), {~zoneDict.at(msg[1])[\isSampleAscend] = false});
 				},{
-				//descending
+					//descending
 					si = si - 1;
 					if(si == 0, {~zoneDict.at(msg[1])[\isSampleAscend] = true});
 				}
@@ -214,8 +221,8 @@ t = Task({
 
 		~zoneDict.at(msg[1])[\sampleIndex] = si;
 
-	},{
-		sel_sample = ~fileBuffers.at(msg[1]).value;
+		},{
+			sel_sample = ~fileBuffers.at(msg[1]).value;
 	});
 
 	//NB. a multisample selector could be created later for multiple sample gran synths
@@ -224,10 +231,10 @@ t = Task({
 
 	if(~zoneDict.at(msg[1]).at(\synthType).asString == "simple",{
 
-			~liveSynths.put(msg[1],
+		~liveSynths.put(msg[1],
 
-				Synth.new(\SimplePlayer,
-					[\buf, sel_sample,
+			Synth.new(\SimplePlayer,
+				[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\loop, ~zoneDict.at(msg[1]).at(\loop),
 					\pan, ~zoneDict.at(msg[1]).at(\pan),
@@ -235,19 +242,21 @@ t = Task({
 					\att, ~zoneDict.at(msg[1]).at(\fadeIn),
 					\dec, ~zoneDict.at(msg[1]).at(\fadeOut),
 					\startPos, ~zoneDict.at(msg[1]).at(\startPos),
-					],~sceneGroups[~sceneBusIndex]
-				);
+					\revBus, ~revBuses[~sceneBusIndex],
+					\rev, 0.2
+				],~sceneGroups[~sceneBusIndex]
+			);
 
-			)
+		)
 
 	});
 
 	if(~zoneDict.at(msg[1]).at(\synthType).asString == "gran1",{
 
-			~liveSynths.put(msg[1],
+		~liveSynths.put(msg[1],
 
-				Synth.new(\Gran1,
-					[\buf, sel_sample,
+			Synth.new(\Gran1,
+				[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\pan, ~zoneDict.at(msg[1]).at(\pan),
 					\amp, ~zoneDict.at(msg[1]).at(\amp),
@@ -257,19 +266,19 @@ t = Task({
 					\pos, ~zoneDict.at(msg[1]).at(\pos),
 					\att, ~zoneDict.at(msg[1]).at(\fadeIn),
 					\dec, ~zoneDict.at(msg[1]).at(\fadeOut)
-					], ~sceneGroups[~sceneBusIndex]
-				);
+				], ~sceneGroups[~sceneBusIndex]
+			);
 
-			)
+		)
 
 	});
 
 	if(~zoneDict.at(msg[1]).at(\synthType).asString == "gran2",{
 
-			~liveSynths.put(msg[1],
+		~liveSynths.put(msg[1],
 
-				Synth.new(\Gran2,
-					[\buf, sel_sample,
+			Synth.new(\Gran2,
+				[\buf, sel_sample,
 					\outBus, ~sceneBuses[~sceneBusIndex],
 					\width, ~zoneDict.at(msg[1]).at(\width),
 					\amp, ~zoneDict.at(msg[1]).at(\amp),
@@ -279,10 +288,10 @@ t = Task({
 					\prange, ~zoneDict.at(msg[1]).at(\prange),
 					\att, ~zoneDict.at(msg[1]).at(\fadeIn),
 					\dec, ~zoneDict.at(msg[1]).at(\fadeOut)
-					], ~sceneGroups[~sceneBusIndex]
-				);
+				], ~sceneGroups[~sceneBusIndex]
+			);
 
-			)
+		)
 
 	});
 
@@ -299,8 +308,8 @@ t = Task({
 	if(~zoneDict.at(msg[1]).at(\playToEnd) == 0 ,{
 		"stop".postln;
 		~liveSynths.at(msg[1]).set(\trig, 0);
-	},{
-		~liveSynths.at(msg[1]).set(\loop, 0);
+		},{
+			~liveSynths.at(msg[1]).set(\loop, 0);
 	});
 
 	//~liveSynths.removeAt(msg[1]);
@@ -316,9 +325,22 @@ t = Task({
 	s.queryAllNodes;
 	~sceneMaster.set(\trig, 0);
 	~sceneMaster = nil;
+	~revMaster.set(\trig, 0);
+	~revMaster = nil;
 	~sceneGroups[~sceneBusIndex].set(\loop, 0);
 	~sceneBusIndex = (~sceneBusIndex + 1)%10;
-	~sceneMaster = Synth.new(\SceneMix, [\inBus, ~sceneBuses[~sceneBusIndex], \att, msg[1], \dec, msg[2]], ~sceneGroups[~sceneBusIndex],'addToTail');
+
+	~revMaster = Synth.new(\Reverb, [\inBus, ~revBuses[~sceneBusIndex],
+		\outBus, ~sceneBuses[~sceneBusIndex] ,
+		\att, msg[1], \dec, msg[2]],
+		~sceneGroups[~sceneBusIndex],'addToTail');
+
+	~sceneMaster = Synth.new(\SceneMix, [\inBus, ~sceneBuses[~sceneBusIndex],
+		\att, msg[1], \dec, msg[2]],
+		~sceneGroups[~sceneBusIndex],'addToTail');
+
+
+
 
 }).add;
 
@@ -340,8 +362,12 @@ t = Task({
 
 	msg.postln;
 	~sceneMaster.free;
+	~revMaster.free;
+
+
 	~sceneBuses.size.do{|count|
 
+		~revBuses[count].free;
 		~sceneBuses[count].free;
 		~sceneGroups[count].free;
 
@@ -362,7 +388,7 @@ t = Task({
 
 	~fileBuffers = nil;
 
-	0.exit;
+	//0.exit;
 
 
 }).add;

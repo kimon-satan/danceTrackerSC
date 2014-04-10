@@ -9,8 +9,17 @@ SynthDef(\SceneMix, {arg att = 0.01, dec = 0.01, inBus = 0, trig = 1;
 
 }).send(s);
 
+SynthDef(\Reverb, {arg att = 0.01, dec = 0.01, inBus = 0, outBus = 0, trig = 1;
+
+	var sig = In.ar(inBus, 2);
+	sig = GVerb.ar(sig + PinkNoise.ar(0.0001));
+	sig = sig * EnvGen.kr(Env.asr(att,1,dec,'sine'), trig, doneAction: 2);
+	Out.ar(outBus,sig);
+
+}).send(s);
+
 SynthDef(\SimplePlayer, {
-	arg pan = 0, buf = 0, amp = 0.5, att =0.01, dec = 0.01, loop= 1, trig = 1, rate = 1, outBus = 0, startPos = 0;
+	arg pan = 0, buf = 0, amp = 0.5, att =0.01, dec = 0.01, loop= 1, trig = 1, rate = 1, outBus = 0, revBus = 0, startPos = 0, rev = 0.5;
 
 	var sig;
 
@@ -19,7 +28,9 @@ SynthDef(\SimplePlayer, {
 
 	sig = sig * EnvGen.kr(Env.asr(att,1,dec,'sine'), trig, doneAction: 2);
 	sig = Pan2.ar(MulAdd(sig, amp, 0),pan);
-	Out.ar(outBus, sig);
+
+	Out.ar(revBus, sig * rev);
+	Out.ar(outBus, sig * (1- rev));
 
 }).send(s);
 
