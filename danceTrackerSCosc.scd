@@ -75,7 +75,7 @@ t = Task({
 ~removeZone = nil;
 ~removeZone = OSCresponderNode(nil, '/removeZone', {|i,r,msg|
 
-	//msg.postln;
+	msg.postln;
 	~zoneDict.removeAt(msg[1]);
 	//also will need to clear file buffers
 
@@ -104,15 +104,18 @@ t = Task({
 ~updateZoneSettings = OSCresponderNode(nil, '/updateZoneSettings', {|i,r,msg|
 
 	//msg.postln;
-	if(~zoneDict.at(msg[1]).at(msg[2]) == nil ,
-		{
-			~zoneDict.at(msg[1]).value.add(msg[2].asSymbol->msg[3])
-		},
-		{
-			~zoneDict.at(msg[1])[msg[2].asSymbol] = msg[3];
-		}
-	);
+	if(~zoneDict.at(msg[1]) != nil, {
+		if(~zoneDict.at(msg[1]).at(msg[2]) == nil ,
+			{
 
+				~zoneDict.at(msg[1]).value.add(msg[2].asSymbol->msg[3])
+			},
+			{
+
+				~zoneDict.at(msg[1])[msg[2].asSymbol] = msg[3];
+			}
+		);
+	},{"zone nil".postln});
 
 
 }).add;
@@ -351,8 +354,12 @@ t = Task({
 
 	//msg.postln;
 	//reset persistent data here
-	~zoneDict.at(msg[1])[\sampleIndex] = 0;
-	~zoneDict.at(msg[1])[\isSampleAscend] = true;
+	if(~zoneDict.at(msg[1]) != nil ,{
+		~zoneDict.at(msg[1])[\sampleIndex] = 0;
+		~zoneDict.at(msg[1])[\isSampleAscend] = true;
+	},{
+		"tried to reset zone: " ++  msg[1] ++ " but it's not there".postln;
+	});
 
 }).add;
 
@@ -388,7 +395,7 @@ t = Task({
 
 	~fileBuffers = nil;
 
-	0.exit;
+	//0.exit;
 
 
 }).add;
